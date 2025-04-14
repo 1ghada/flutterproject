@@ -13,7 +13,6 @@ class Resource {
     required this.capacity,
   });
 
-  // Convertir un objet Resource en Map (pour SQLite)
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
       'name': name,
@@ -27,7 +26,6 @@ class Resource {
     return map;
   }
 
-  // Créer un objet Resource à partir d’un Map (depuis SQLite)
   factory Resource.fromMap(Map<String, dynamic> map) {
     return Resource(
       id: map['id'],
@@ -36,5 +34,27 @@ class Resource {
       description: map['description'],
       capacity: map['capacity'],
     );
+  }
+
+  // ✅ Méthode fromJson utilisée par Reservation
+  factory Resource.fromJson(Map<String, dynamic> json) {
+    return Resource(
+      id: json['id'],
+      name: json['name'],
+      type: json['type'],
+      description: json['description'],
+      capacity: json['capacity'],
+    );
+  }
+
+  // ✅ Méthode toJson si tu fais des appels HTTP ou Firebase
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type,
+      'description': description,
+      'capacity': capacity,
+    };
   }
 }

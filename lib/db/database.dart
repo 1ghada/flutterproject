@@ -16,21 +16,24 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,  // Changer la version ici (de 1 à 2)
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,  // Ajouter une gestion de mise à jour
     );
   }
 
   static Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
+    await db.execute(''' 
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT,
+        email TEXT,
+        password TEXT,
         role TEXT
       );
     ''');
 
-    await db.execute('''
+    await db.execute(''' 
       CREATE TABLE resources (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
@@ -40,7 +43,7 @@ class AppDatabase {
       );
     ''');
 
-    await db.execute('''
+    await db.execute(''' 
       CREATE TABLE reservations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         userId INTEGER,
@@ -49,5 +52,15 @@ class AppDatabase {
         timeSlot TEXT
       );
     ''');
+  }
+
+  // Gestion de la mise à jour de la base de données
+  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Mise à jour de la table 'users' pour ajouter le champ 'password'
+      await db.execute(''' 
+        ALTER TABLE users ADD COLUMN password TEXT;
+      ''');
+    }
   }
 }
