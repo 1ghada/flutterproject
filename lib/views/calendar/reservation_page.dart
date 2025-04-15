@@ -1,6 +1,6 @@
+// views/calendar/reservation_page.dart
+
 import 'package:flutter/material.dart';
-import 'package:flutter_booking/db/database.dart'; // Si tu veux récupérer les données de la base
-import 'package:flutter_booking/models/resource.dart'; // Assure-toi que cette classe existe
 
 class ReservationPage extends StatefulWidget {
   const ReservationPage({super.key});
@@ -10,135 +10,83 @@ class ReservationPage extends StatefulWidget {
 }
 
 class _ReservationPageState extends State<ReservationPage> {
-  List<Resource> resources = []; // Liste des ressources à réserver
-  DateTime selectedDate = DateTime.now(); // Date sélectionnée
-  String selectedTimeSlot = ""; // Plage horaire sélectionnée
+  final TextEditingController _resourceController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
+  String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadResources();
-  }
+  // Méthode pour traiter la réservation (ajuster selon ton besoin)
+  Future<void> _reserve() async {
+    // Logique de réservation à ajouter ici
 
-  // Charge les ressources depuis la base de données
-  Future<void> _loadResources() async {
-    final db = await AppDatabase.database;
-    final resourceList = await db.query('resources');
-    setState(() {
-      resources = resourceList.map((resource) => Resource.fromJson(resource)).toList();
-    });
-  }
+    // Exemple de traitement de réservation (mettre en place le modèle de réservation)
+    try {
+      final resource = _resourceController.text.trim();
+      final date = _dateController.text.trim();
+      final time = _timeController.text.trim();
 
-  // Gère la sélection d'une ressource
-  Future<void> _reserveResource(Resource resource) async {
-    // Ici, on suppose qu'un utilisateur est déjà authentifié
-    final userId = 1; // À remplacer par l'ID de l'utilisateur connecté
-    final reservationDate = selectedDate.toIso8601String();
-    
-    // Enregistrer la réservation dans la base de données
-    final db = await AppDatabase.database;
-    await db.insert('reservations', {
-      'userId': userId,
-      'resourceId': resource.id,
-      'date': reservationDate,
-      'timeSlot': selectedTimeSlot,
-    });
+      if (resource.isEmpty || date.isEmpty || time.isEmpty) {
+        throw Exception('Tous les champs sont requis.');
+      }
 
-    // Afficher un message de confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Réservation effectuée pour ${resource.name}')),
-    );
+      // Ajoute la logique pour réserver ici, par exemple, enregistrer la réservation dans une base de données
+
+      // Après la réservation, tu peux afficher un message de succès ou retourner à la page précédente
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Réservation effectuée avec succès')),
+      );
+      Navigator.pop(context); // Ferme la page de réservation et revient à la page précédente
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Réservation de Ressources')),
+      appBar: AppBar(
+        title: const Text('Réserver une ressource'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sélection de la date
-            const Text(
-              'Sélectionner une date',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () async {
-                final DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate,
-                  firstDate: DateTime(2023),
-                  lastDate: DateTime(2025),
-                );
-                if (picked != null && picked != selectedDate) {
-                  setState(() {
-                    selectedDate = picked;
-                  });
-                }
-              },
-              child: Text('Choisir une date: ${selectedDate.toLocal()}'),
-            ),
-            const SizedBox(height: 16),
-
-            // Sélection de l'heure
-            const Text(
-              'Sélectionner une plage horaire',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            DropdownButton<String>(
-              value: selectedTimeSlot.isEmpty ? null : selectedTimeSlot,
-              hint: const Text('Sélectionner une heure'),
-              items: <String>['9:00 - 12:00', '13:00 - 16:00', '16:00 - 19:00']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedTimeSlot = value!;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Liste des ressources disponibles
-            const Text(
-              'Ressources disponibles',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                itemCount: resources.length,
-                itemBuilder: (context, index) {
-                  final resource = resources[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text(resource.name),
-                      subtitle: Text('Type: ${resource.type}'),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          if (selectedTimeSlot.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Veuillez choisir une heure.')),
-                            );
-                          } else {
-                            _reserveResource(resource);
-                          }
-                        },
-                        child: const Text('Réserver'),
-                      ),
-                    ),
-                  );
-                },
+            const Text('Veuillez remplir les informations pour réserver une ressource'),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _resourceController,
+              decoration: const InputDecoration(
+                labelText: 'Nom de la ressource',
+                border: OutlineInputBorder(),
               ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _dateController,
+              decoration: const InputDecoration(
+                labelText: 'Date de réservation',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.datetime,
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _timeController,
+              decoration: const InputDecoration(
+                labelText: 'Horaire de réservation',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.datetime,
+            ),
+            const SizedBox(height: 10),
+            if (_error != null)
+              Text(_error!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _reserve,
+              child: const Text('Réserver'),
             ),
           ],
         ),
