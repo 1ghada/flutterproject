@@ -1,5 +1,3 @@
-// views/home_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_booking/views/ressource_page.dart'; // Assure-toi que le fichier existe
 import 'package:flutter_booking/views/calendar/reservation_page.dart'; // Page de réservation
@@ -49,7 +47,7 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const ReservationPage()), // Navigue vers la page de réservation
+                  MaterialPageRoute(builder: (context) => const ReservationPage()),
                 );
               },
             ),
