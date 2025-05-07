@@ -16,16 +16,18 @@ class _SignupViewState extends State<SignupView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  String? _selectedRole; // <-- Ajouté
+
   final AuthService _authService = AuthService();
 
   Future<void> _signup() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _selectedRole == null) return;
 
     final newUser = User(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
-      role: 'user',
+      role: _selectedRole!, // <-- utiliser le rôle sélectionné
     );
 
     try {
@@ -87,6 +89,30 @@ class _SignupViewState extends State<SignupView> {
                 validator: (value) =>
                     value == null || value.length < 6 ? 'Mot de passe trop court' : null,
               ),
+              const SizedBox(height: 10),
+
+              // 🎯 Nouveau champ pour le rôle
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Rôle',
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedRole,
+                items: ['user', 'admin', 'manager'].map((role) {
+                  return DropdownMenuItem<String>(
+                    value: role,
+                    child: Text(role),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedRole = value;
+                  });
+                },
+                validator: (value) =>
+                    value == null ? 'Veuillez sélectionner un rôle' : null,
+              ),
+
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _signup,

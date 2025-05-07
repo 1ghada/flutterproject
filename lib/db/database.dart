@@ -14,11 +14,14 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     String path = join(dbPath, 'booking.db');
 
+    // ❗️Supprimer la base de données pour forcer sa recréation (développement uniquement)
+    await deleteDatabase(path);
+
     return await openDatabase(
       path,
-      version: 2,  // Changer la version ici (de 1 à 2)
+      version: 4, // ⬅️ version mise à jour
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,  // Ajouter une gestion de mise à jour
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -26,7 +29,7 @@ class AppDatabase {
     await db.execute(''' 
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
+        name TEXT,
         email TEXT,
         password TEXT,
         role TEXT
@@ -52,14 +55,28 @@ class AppDatabase {
         timeSlot TEXT
       );
     ''');
+
+    await db.execute('''
+      CREATE TABLE time_slots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        resourceId INTEGER,
+        startTime TEXT,
+        endTime TEXT,
+        FOREIGN KEY (resourceId) REFERENCES resources(id)
+      );
+    ''');
   }
 
-  // Gestion de la mise à jour de la base de données
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Mise à jour de la table 'users' pour ajouter le champ 'password'
-      await db.execute(''' 
-        ALTER TABLE users ADD COLUMN password TEXT;
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS time_slots (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          resourceId INTEGER,
+          startTime TEXT,
+          endTime TEXT,
+          FOREIGN KEY (resourceId) REFERENCES resources(id)
+        );
       ''');
     }
   }

@@ -61,4 +61,5 @@ class AuthService {
       whereArgs: [user.id],
     );
   }
+  
 }
