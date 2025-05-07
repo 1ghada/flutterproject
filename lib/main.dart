@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignupView(), // Route pour l'inscription
         '/home': (context) => const HomePage(), // Route pour la page d'accueil
         '/ressources': (context) => const ResourcePage(), // Route pour la gestion des ressources
-        '/reservation': (context) => const ReservationPage(), // Route pour la réservation
+        '/reservation': (context) =>  BookingScreen(), // Route pour la réservation
       },
       debugShowCheckedModeBanner: false,
     );

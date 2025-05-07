@@ -1,92 +1,139 @@
-// views/calendar/reservation_page.dart
-
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';  // Ajout de l'importation
+import '/services/reservation_service.dart';
+import '/services/ressources_service.dart';
+import '/models/resource.dart';
 
-class ReservationPage extends StatefulWidget {
-  const ReservationPage({super.key});
-
+class BookingScreen extends StatefulWidget {
   @override
-  State<ReservationPage> createState() => _ReservationPageState();
+  _BookingScreenState createState() => _BookingScreenState();
 }
 
-class _ReservationPageState extends State<ReservationPage> {
-  final TextEditingController _resourceController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
-  final TextEditingController _timeController = TextEditingController();
-  String? _error;
+class _BookingScreenState extends State<BookingScreen> {
+  final _reservationService = ReservationService();
+  final _resourceService = ResourceService();
 
-  // Méthode pour traiter la réservation (ajuster selon ton besoin)
-  Future<void> _reserve() async {
-    // Logique de réservation à ajouter ici
+  Resource? selectedResource;
+  DateTime? selectedDate;
+  String? selectedTimeSlot;
 
-    // Exemple de traitement de réservation (mettre en place le modèle de réservation)
-    try {
-      final resource = _resourceController.text.trim();
-      final date = _dateController.text.trim();
-      final time = _timeController.text.trim();
+  List<Resource> resources = [];
+  List<String> availableTimeSlots = [];
 
-      if (resource.isEmpty || date.isEmpty || time.isEmpty) {
-        throw Exception('Tous les champs sont requis.');
-      }
+  @override
+  void initState() {
+    super.initState();
+    loadResources();
+  }
 
-      // Ajoute la logique pour réserver ici, par exemple, enregistrer la réservation dans une base de données
+  Future<void> loadResources() async {
+    final result = await _resourceService.getAllResources();
+    setState(() {
+      resources = result;
+    });
+  }
 
-      // Après la réservation, tu peux afficher un message de succès ou retourner à la page précédente
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Réservation effectuée avec succès')),
-      );
-      Navigator.pop(context); // Ferme la page de réservation et revient à la page précédente
-    } catch (e) {
+  Future<void> checkAvailability() async {
+    if (selectedResource != null && selectedDate != null) {
+      final dateStr = selectedDate!.toIso8601String().split("T").first;
+      final slots = await _reservationService.getAvailableTimeSlots(selectedResource!.id!, dateStr);
       setState(() {
-        _error = e.toString();
+        availableTimeSlots = slots;
+        selectedTimeSlot = null;
       });
+    }
+  }
+
+  // Récupérer l'ID de l'utilisateur à partir de SharedPreferences
+  Future<int?> getUserIdFromPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('userId');
+  }
+
+  Future<void> submitReservation() async {
+    final userId = await getUserIdFromPreferences();
+    
+    if (userId != null && selectedResource != null && selectedDate != null && selectedTimeSlot != null) {
+      final dateStr = selectedDate!.toIso8601String().split("T").first;
+
+      await _reservationService.reserve(
+        userId: userId,
+        resourceId: selectedResource!.id!,
+        date: dateStr,
+        timeSlot: selectedTimeSlot!,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Réservation réussie !')));
+    } else {
+      // Si l'utilisateur n'est pas connecté ou des informations sont manquantes
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Veuillez vous connecter et compléter tous les champs.')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Réserver une ressource'),
-      ),
+      appBar: AppBar(title: Text("Réserver une ressource")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Text('Veuillez remplir les informations pour réserver une ressource'),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _resourceController,
-              decoration: const InputDecoration(
-                labelText: 'Nom de la ressource',
-                border: OutlineInputBorder(),
-              ),
+            DropdownButton<Resource>(
+              hint: Text("Choisir une ressource"),
+              value: selectedResource,
+              items: resources.map((r) {
+                return DropdownMenuItem(
+                  value: r,
+                  child: Text(r.name),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedResource = value;
+                });
+              },
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _dateController,
-              decoration: const InputDecoration(
-                labelText: 'Date de réservation',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.datetime,
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _timeController,
-              decoration: const InputDecoration(
-                labelText: 'Horaire de réservation',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.datetime,
-            ),
-            const SizedBox(height: 10),
-            if (_error != null)
-              Text(_error!, style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 20),
+            SizedBox(height: 10),
             ElevatedButton(
-              onPressed: _reserve,
-              child: const Text('Réserver'),
+              child: Text(selectedDate == null
+                  ? "Choisir une date"
+                  : "${selectedDate!.toLocal()}".split(' ')[0]),
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  setState(() {
+                    selectedDate = picked;
+                  });
+                  await checkAvailability();
+                }
+              },
+            ),
+            SizedBox(height: 10),
+            if (availableTimeSlots.isNotEmpty)
+              DropdownButton<String>(
+                hint: Text("Choisir un créneau"),
+                value: selectedTimeSlot,
+                items: availableTimeSlots.map((slot) {
+                  return DropdownMenuItem(
+                    value: slot,
+                    child: Text(slot),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedTimeSlot = value;
+                  });
+                },
+              ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: submitReservation,
+              child: Text("Réserver"),
             ),
           ],
         ),

@@ -1,40 +1,35 @@
-import 'user.dart';
-import 'resource.dart';
-
 class Reservation {
-  final String id;
-  final User user;
-  final Resource resource;
-  final DateTime startTime;
-  final DateTime endTime;
-  final bool approvedByManager;
+  final int? id;
+  final int userId;
+  final int resourceId;
+  final String date;
+  final String timeSlot;
 
   Reservation({
-    required this.id,
-    required this.user,
-    required this.resource,
-    required this.startTime,
-    required this.endTime,
-    this.approvedByManager = false,
+    this.id,
+    required this.userId,
+    required this.resourceId,
+    required this.date,
+    required this.timeSlot,
   });
 
-  factory Reservation.fromJson(Map<String, dynamic> json) {
-    return Reservation(
-      id: json['id'],
-      user: User.fromJson(json['user']),
-      resource: Resource.fromJson(json['resource']),
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
-      approvedByManager: json['approvedByManager'] ?? false,
-    );
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'userId': userId,
+      'resourceId': resourceId,
+      'date': date,
+      'timeSlot': timeSlot,
+    };
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'user': user.toJson(),
-    'resource': resource.toJson(),
-    'startTime': startTime.toIso8601String(),
-    'endTime': endTime.toIso8601String(),
-    'approvedByManager': approvedByManager,
-  };
+  factory Reservation.fromMap(Map<String, dynamic> map) {
+    return Reservation(
+      id: map['id'],
+      userId: map['userId'],
+      resourceId: map['resourceId'],
+      date: map['date'],
+      timeSlot: map['timeSlot'],
+    );
+  }
 }

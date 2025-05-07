@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../db/database.dart';
 import '../models/user.dart';
@@ -25,12 +26,17 @@ class AuthService {
     );
 
     if (result.isNotEmpty) {
-      return User.fromJson(result.first);
+      final user = User.fromJson(result.first);
+
+      // Stocker l'ID de l'utilisateur dans SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('userId', user.id!);
+
+      return user;
     } else {
       return null;
     }
   }
-
   // Récupérer tous les utilisateurs (utile pour debug)
   Future<List<User>> getAllUsers() async {
     final db = await AppDatabase.database;
@@ -60,6 +66,22 @@ class AuthService {
       where: 'id = ?',
       whereArgs: [user.id],
     );
+  }
+  // Récupérer l'ID de l'utilisateur connecté par email
+  Future<int?> getUserId(String email) async {
+    final db = await AppDatabase.database;
+
+    final result = await db.query(
+      'users',
+      where: 'email = ?',
+      whereArgs: [email],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['id'] as int?;  // Assurez-vous que l'ID est de type int
+    } else {
+      return null;  // Aucun utilisateur trouvé
+    }
   }
   
 }

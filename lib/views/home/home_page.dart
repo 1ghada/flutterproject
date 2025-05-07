@@ -47,7 +47,7 @@ class HomePage extends StatelessWidget {
               onTap: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => const ReservationPage()),
+                  MaterialPageRoute(builder: (context) => BookingScreen()),
                 );
               },
             ),
