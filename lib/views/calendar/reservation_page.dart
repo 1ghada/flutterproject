@@ -6,6 +6,7 @@ import '/models/resource.dart';
 
 class BookingScreen extends StatefulWidget {
   @override
+  // ignore: library_private_types_in_public_api
   _BookingScreenState createState() => _BookingScreenState();
 }
 

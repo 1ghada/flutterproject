@@ -15,11 +15,11 @@ class AppDatabase {
     String path = join(dbPath, 'booking.db');
 
     // ❗️Supprimer la base de données pour forcer sa recréation (développement uniquement)
-    await deleteDatabase(path);
+    // await deleteDatabase(path);
 
     return await openDatabase(
       path,
-      version: 4, // ⬅️ version mise à jour
+      version: 5, // ⬅️ Mise à jour de version
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -42,7 +42,8 @@ class AppDatabase {
         name TEXT,
         type TEXT,
         description TEXT,
-        capacity INTEGER
+        capacity INTEGER,
+        requiresValidation INTEGER DEFAULT 0 -- ⬅️ 0 : non, 1 : oui
       );
     ''');
 
@@ -52,7 +53,10 @@ class AppDatabase {
         userId INTEGER,
         resourceId INTEGER,
         date TEXT,
-        timeSlot TEXT
+        timeSlot TEXT,
+        status TEXT DEFAULT 'en_attente', -- ⬅️ en_attente, validée, refusée
+        FOREIGN KEY (userId) REFERENCES users(id),
+        FOREIGN KEY (resourceId) REFERENCES resources(id)
       );
     ''');
 
@@ -68,15 +72,13 @@ class AppDatabase {
   }
 
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 4) {
+    if (oldVersion < 5) {
       await db.execute('''
-        CREATE TABLE IF NOT EXISTS time_slots (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          resourceId INTEGER,
-          startTime TEXT,
-          endTime TEXT,
-          FOREIGN KEY (resourceId) REFERENCES resources(id)
-        );
+        ALTER TABLE resources ADD COLUMN requiresValidation INTEGER DEFAULT 0;
+      ''');
+
+      await db.execute('''
+        ALTER TABLE reservations ADD COLUMN status TEXT DEFAULT 'en_attente';
       ''');
     }
   }

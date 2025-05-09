@@ -4,6 +4,7 @@ class Resource {
   String type;
   String description;
   int capacity;
+  int requiresValidation; // ✅ Nouveau champ
 
   Resource({
     this.id,
@@ -11,6 +12,7 @@ class Resource {
     required this.type,
     required this.description,
     required this.capacity,
+    this.requiresValidation = 0, // Par défaut : pas de validation
   });
 
   Map<String, dynamic> toMap() {
@@ -19,6 +21,7 @@ class Resource {
       'type': type,
       'description': description,
       'capacity': capacity,
+      'requiresValidation': requiresValidation,
     };
     if (id != null) {
       map['id'] = id;
@@ -33,10 +36,10 @@ class Resource {
       type: map['type'],
       description: map['description'],
       capacity: map['capacity'],
+      requiresValidation: map['requiresValidation'] ?? 0,
     );
   }
 
-  // ✅ Méthode fromJson utilisée par Reservation
   factory Resource.fromJson(Map<String, dynamic> json) {
     return Resource(
       id: json['id'],
@@ -44,10 +47,10 @@ class Resource {
       type: json['type'],
       description: json['description'],
       capacity: json['capacity'],
+      requiresValidation: json['requiresValidation'] ?? 0,
     );
   }
 
-  // ✅ Méthode toJson si tu fais des appels HTTP ou Firebase
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -55,6 +58,7 @@ class Resource {
       'type': type,
       'description': description,
       'capacity': capacity,
+      'requiresValidation': requiresValidation,
     };
   }
 }
