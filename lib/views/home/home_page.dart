@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_booking/views/ressource_page.dart'; // Assure-toi que le fichier existe
-import 'package:flutter_booking/views/calendar/reservation_page.dart'; // Page de réservation
+import 'package:flutter_booking/views/ressource_page.dart';
+import 'package:flutter_booking/views/calendar/reservation_page.dart';
+import 'package:flutter_booking/views/reservation_list_screen.dart'; // ✅ Import ajouté
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -43,11 +44,21 @@ class HomePage extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.event),
-              title: const Text('Réservations'),
+              title: const Text('Faire une réservation'),
               onTap: () {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => BookingScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text('Mes Réservations'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => ReservationListScreen()),
                 );
               },
             ),

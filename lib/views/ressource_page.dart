@@ -120,6 +120,14 @@ class _ResourcePageState extends State<ResourcePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Ressources disponibles"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/home');
+            },
+          )
+        ],
       ),
       body: Column(
         children: [

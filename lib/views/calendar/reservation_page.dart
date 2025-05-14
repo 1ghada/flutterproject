@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';  // Ajout de l'importation
+import 'package:shared_preferences/shared_preferences.dart';
 import '/services/reservation_service.dart';
 import '/services/ressources_service.dart';
 import '/models/resource.dart';
 
 class BookingScreen extends StatefulWidget {
   @override
-  // ignore: library_private_types_in_public_api
   _BookingScreenState createState() => _BookingScreenState();
 }
 
@@ -16,10 +15,8 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Resource? selectedResource;
   DateTime? selectedDate;
-  String? selectedTimeSlot;
 
   List<Resource> resources = [];
-  List<String> availableTimeSlots = [];
 
   @override
   void initState() {
@@ -34,18 +31,6 @@ class _BookingScreenState extends State<BookingScreen> {
     });
   }
 
-  Future<void> checkAvailability() async {
-    if (selectedResource != null && selectedDate != null) {
-      final dateStr = selectedDate!.toIso8601String().split("T").first;
-      final slots = await _reservationService.getAvailableTimeSlots(selectedResource!.id!, dateStr);
-      setState(() {
-        availableTimeSlots = slots;
-        selectedTimeSlot = null;
-      });
-    }
-  }
-
-  // Récupérer l'ID de l'utilisateur à partir de SharedPreferences
   Future<int?> getUserIdFromPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('userId');
@@ -53,28 +38,54 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Future<void> submitReservation() async {
     final userId = await getUserIdFromPreferences();
-    
-    if (userId != null && selectedResource != null && selectedDate != null && selectedTimeSlot != null) {
-      final dateStr = selectedDate!.toIso8601String().split("T").first;
 
+    if (selectedResource == null || selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Veuillez sélectionner une ressource et une date.')),
+      );
+      return;
+    }
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Utilisateur non identifié. Veuillez vous connecter.')),
+      );
+      return;
+    }
+
+    final dateStr = selectedDate!.toIso8601String().split("T").first;
+
+    try {
       await _reservationService.reserve(
         userId: userId,
         resourceId: selectedResource!.id!,
         date: dateStr,
-        timeSlot: selectedTimeSlot!,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Réservation réussie !')));
-    } else {
-      // Si l'utilisateur n'est pas connecté ou des informations sont manquantes
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Veuillez vous connecter et compléter tous les champs.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Réservation réussie !')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Réserver une ressource")),
+      appBar: AppBar(
+        title: Text("Réserver une ressource"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.home),
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/home');
+            },
+          )
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -110,27 +121,9 @@ class _BookingScreenState extends State<BookingScreen> {
                   setState(() {
                     selectedDate = picked;
                   });
-                  await checkAvailability();
                 }
               },
             ),
-            SizedBox(height: 10),
-            if (availableTimeSlots.isNotEmpty)
-              DropdownButton<String>(
-                hint: Text("Choisir un créneau"),
-                value: selectedTimeSlot,
-                items: availableTimeSlots.map((slot) {
-                  return DropdownMenuItem(
-                    value: slot,
-                    child: Text(slot),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedTimeSlot = value;
-                  });
-                },
-              ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: submitReservation,
