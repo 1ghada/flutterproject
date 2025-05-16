@@ -57,4 +57,20 @@ class ResourceService {
       whereArgs: [id],
     );
   }
+
+  // 6. Récupérer une ressource par son ID
+  Future<Resource?> getResourceById(int id) async {
+    final db = await AppDatabase.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'resources',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isEmpty) {
+      return null;
+    }
+
+    return Resource.fromMap(maps.first);
+  }
 }

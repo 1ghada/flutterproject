@@ -27,7 +27,7 @@ class User {
 
   // Méthode pour convertir l'utilisateur en Map (JSON)
   Map<String, dynamic> toJson() {
-    final map = {
+    final map = <String, dynamic>{
       'name': name,
       'email': email,
       'password': password,
@@ -35,7 +35,7 @@ class User {
     };
     // Ajoute l'id seulement si ce dernier est non nul
     if (id != null) {
-      map['id'] = id as String;
+      map['id'] = id;
     }
     return map;
   }

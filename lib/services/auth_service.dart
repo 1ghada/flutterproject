@@ -83,5 +83,27 @@ class AuthService {
       return null;  // Aucun utilisateur trouvé
     }
   }
-  
+
+  // Récupérer un utilisateur par son ID
+  Future<User?> getUserById(int userId) async {
+    final db = await AppDatabase.database;
+
+    final result = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+
+    if (result.isNotEmpty) {
+      return User.fromJson(result.first);
+    } else {
+      return null;  // Aucun utilisateur trouvé
+    }
+  }
+
+  // Récupérer le nom d'un utilisateur par son ID
+  Future<String> getUserNameById(int userId) async {
+    final user = await getUserById(userId);
+    return user?.name ?? 'Utilisateur #$userId';
+  }
 }

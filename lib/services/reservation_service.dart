@@ -1,5 +1,7 @@
 import 'package:flutter_booking/db/database.dart';
 import 'package:flutter_booking/models/reservation.dart';
+import 'package:flutter_booking/services/notification_service.dart';
+import 'package:flutter_booking/services/ressources_service.dart';
 
 class ReservationService {
   // Vérifier la disponibilité d'une ressource pour une date donnée
@@ -21,6 +23,7 @@ class ReservationService {
     required int userId,
     required int resourceId,
     required String date,
+    String timeSlot = 'Journée', // Valeur par défaut pour le créneau horaire
   }) async {
     final db = await AppDatabase.database;
 
@@ -36,6 +39,7 @@ class ReservationService {
       'userId': userId,
       'resourceId': resourceId,
       'date': date,
+      'timeSlot': timeSlot, // Ajout du créneau horaire
       'status': 'en_attente', // Par défaut
     });
   }
@@ -56,22 +60,100 @@ class ReservationService {
   // Valider ou rejeter une réservation
   Future<void> validateReservation(int reservationId, String status) async {
     final db = await AppDatabase.database;
+    final notificationService = NotificationService();
+    final resourceService = ResourceService();
 
+    // Récupérer les informations de la réservation
+    final List<Map<String, dynamic>> reservationMaps = await db.query(
+      'reservations',
+      where: 'id = ?',
+      whereArgs: [reservationId],
+    );
+
+    if (reservationMaps.isEmpty) {
+      throw Exception('Réservation non trouvée');
+    }
+
+    final reservation = Reservation.fromMap(reservationMaps.first);
+
+    // Récupérer le nom de la ressource
+    final resource = await resourceService.getResourceById(reservation.resourceId);
+    final resourceName = resource?.name ?? 'Ressource #${reservation.resourceId}';
+
+    // Mettre à jour le statut de la réservation
     await db.update(
       'reservations',
       {'status': status}, // 'validée' ou 'rejetée'
       where: 'id = ?',
       whereArgs: [reservationId],
     );
+
+    // Créer une notification pour l'utilisateur
+    if (status == 'validée') {
+      await notificationService.createReservationValidatedNotification(
+        userId: reservation.userId,
+        reservationId: reservationId,
+        resourceName: resourceName,
+        date: reservation.date,
+      );
+    } else if (status == 'rejetée') {
+      await notificationService.createReservationRejectedNotification(
+        userId: reservation.userId,
+        reservationId: reservationId,
+        resourceName: resourceName,
+        date: reservation.date,
+      );
+    }
   }
 
  // Récupérer toutes les réservations
 Future<List<Reservation>> getAllReservations() async {
   final db = await AppDatabase.database;
 
+  // Vérifier et mettre à jour les réservations sans timeSlot
+  await _updateReservationsWithoutTimeSlot();
+
   final List<Map<String, dynamic>> maps = await db.query('reservations');
 
   return maps.map((r) => Reservation.fromMap(r)).toList();
+}
+
+// Récupérer les réservations d'un utilisateur spécifique
+Future<List<Reservation>> getUserReservations(int userId) async {
+  final db = await AppDatabase.database;
+
+  // Vérifier et mettre à jour les réservations sans timeSlot
+  await _updateReservationsWithoutTimeSlot();
+
+  final List<Map<String, dynamic>> maps = await db.query(
+    'reservations',
+    where: 'userId = ?',
+    whereArgs: [userId],
+  );
+
+  return maps.map((r) => Reservation.fromMap(r)).toList();
+}
+
+// Mettre à jour les réservations qui n'ont pas de timeSlot
+Future<void> _updateReservationsWithoutTimeSlot() async {
+  final db = await AppDatabase.database;
+
+  // Vérifier s'il y a des réservations sans timeSlot
+  final List<Map<String, dynamic>> reservationsWithoutTimeSlot = await db.rawQuery(
+    "SELECT * FROM reservations WHERE timeSlot IS NULL OR timeSlot = ''"
+  );
+
+  // Mettre à jour ces réservations avec une valeur par défaut
+  if (reservationsWithoutTimeSlot.isNotEmpty) {
+    for (var reservation in reservationsWithoutTimeSlot) {
+      await db.update(
+        'reservations',
+        {'timeSlot': 'Journée'},
+        where: 'id = ?',
+        whereArgs: [reservation['id']],
+      );
+    }
+  }
 }
 
 

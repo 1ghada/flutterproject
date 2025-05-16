@@ -31,8 +31,8 @@ class Reservation {
       id: map['id'],
       userId: map['userId'],
       resourceId: map['resourceId'],
-      date: map['date'],
-      timeSlot: map['timeSlot'],
+      date: map['date'] ?? '',
+      timeSlot: map['timeSlot'] ?? 'Journée', // Valeur par défaut si null
       status: map['status'] ?? 'en_attente',
     );
   }

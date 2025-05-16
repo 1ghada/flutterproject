@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_booking/views/home/ReservationValidationPage.dart';
+import 'package:flutter_booking/views/reservation_list_screen.dart';
+import 'package:flutter_booking/views/notifications_screen.dart';
 
 import 'views/home/home_page.dart';
 import 'views/ressource_page.dart';
@@ -31,6 +33,8 @@ class MyApp extends StatelessWidget {
         '/ressources': (context) => const ResourcePage(), // Route pour la gestion des ressources
         '/reservation': (context) =>  BookingScreen(), // Route pour la réservation
         '/validation': (context) =>  ReservationValidationPage(), // Route pour la validation des réservations par le manager
+        '/reservations': (context) => const ReservationListScreen(), // Route pour la liste des réservations
+        '/notifications': (context) => const NotificationsScreen(), // Route pour les notifications
       },
       debugShowCheckedModeBanner: false,
     );

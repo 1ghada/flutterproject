@@ -19,14 +19,14 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 5, // ⬅️ Mise à jour de version
+      version: 6, // ⬅️ Mise à jour de version pour ajouter la table de notifications
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   static Future<void> _onCreate(Database db, int version) async {
-    await db.execute(''' 
+    await db.execute('''
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
@@ -36,7 +36,7 @@ class AppDatabase {
       );
     ''');
 
-    await db.execute(''' 
+    await db.execute('''
       CREATE TABLE resources (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
@@ -47,7 +47,7 @@ class AppDatabase {
       );
     ''');
 
-    await db.execute(''' 
+    await db.execute('''
       CREATE TABLE reservations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         userId INTEGER,
@@ -69,6 +69,20 @@ class AppDatabase {
         FOREIGN KEY (resourceId) REFERENCES resources(id)
       );
     ''');
+
+    await db.execute('''
+      CREATE TABLE notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId INTEGER,
+        title TEXT,
+        message TEXT,
+        createdAt TEXT,
+        isRead INTEGER DEFAULT 0, -- ⬅️ 0 : non lu, 1 : lu
+        type TEXT,
+        relatedId INTEGER,
+        FOREIGN KEY (userId) REFERENCES users(id)
+      );
+    ''');
   }
 
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -79,6 +93,23 @@ class AppDatabase {
 
       await db.execute('''
         ALTER TABLE reservations ADD COLUMN status TEXT DEFAULT 'en_attente';
+      ''');
+    }
+
+    if (oldVersion < 6) {
+      // Création de la table de notifications
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userId INTEGER,
+          title TEXT,
+          message TEXT,
+          createdAt TEXT,
+          isRead INTEGER DEFAULT 0,
+          type TEXT,
+          relatedId INTEGER,
+          FOREIGN KEY (userId) REFERENCES users(id)
+        );
       ''');
     }
   }
